@@ -4,13 +4,19 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const multer = require('multer');
 const uploadmiddleware = multer({dest:'uploads/'});
-const Hero = require('../models/Hero');
+const Hero = require('./models/Hero.js');
 const bcrypt = require('bcrypt');
 const jwt= require('jsonwebtoken');
+const abt=require('./models/About.js');
+const fs = require('fs');
 
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+//token salt generator
+const salt= bcrypt.genSaltSync(10);
+const tokensalt = 'AnonymousShad0w8';
 
 // Middleware
 app.use(cors());
@@ -26,6 +32,7 @@ connection.once('open', () => {
 // Define routes
 const heroRouter = require('./routes/hero');
 const contactRouter = require('./routes/contact');
+const About = require('./models/About.js');
 
 app.use('/api/hero', heroRouter);
 app.use('/api/contact', contactRouter);
@@ -71,7 +78,7 @@ app.post(''/*login form name */, async (req,res) => {
 })
 
 
-// profile image uploading
+// hero profile uploading
 app.post(''/*the page from where the file is to be uploaded-fronted*/,uploadmiddleware.single(''/*the fieldname in the form */), async (req,res) =>{
     const {originalname,path} = req.file;
     const part = originalname.split('.');
@@ -82,6 +89,32 @@ app.post(''/*the page from where the file is to be uploaded-fronted*/,uploadmidd
         const postDoc = await Hero.create({
             //require the data in form and assign it here to store in the database
             profilePicUrl:newPath,
+            fullName: fullname/*name from form */,
+            lastName: lastname/*name from form */ ,
+            titles: title/*title from form */,
+            introduction: intro/*paragraph from form */,
         });
         res.json(postDoc);
+});
+
+app.post(''/*form name from where the services data has to be taken*/ , async (req,res) =>{
+
+    const {token} = req.cookies;
+    jwt.verify(token, tokensalt, {}, async (err,info) =>{
+        if(err) throw err;
+        const {bio,skills,achievments} = req.body;
+        const postDoc = await About.create({
+            bio: bio,
+            skills:skills,
+            achievment:acheivement,
+            services:[{
+                position:pos,
+                location:location,
+                descriptoin:des,
+            }],
+            resume:resume,
+        });
+        res.json(postDoc);
+    });
+
 });
